@@ -233,8 +233,8 @@
   pagebreak(weak: true)
 }
 
-#for id in config.targets.slice(0, 10) {
-// #for id in config.targets {
+// #for id in config.targets.slice(0, 10) {
+#for id in config.targets {
   layout_student(id)
 }
 
