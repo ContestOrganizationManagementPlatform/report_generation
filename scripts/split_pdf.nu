@@ -1,5 +1,15 @@
-pdfseparate report.pdf output/recombined/%d.pdf
-0..(1935 / 5) | par-each {|i| pdfunite $"output/split/($i * 5 + 1).pdf" $"output/split/($i * 5 + 2).pdf" $"output/split/($i * 5 + 3).pdf" $"output/split/($i * 5 + 4).pdf" $"output/split/($i * 5 + 5).pdf" $"output/recombined/($i).pdf"}
+#!/usr/bin/env nu
 
-let ids = (open config.toml | get config.targets)
-for i in 0..(1935 / 5) {mv $"output/recombined/($i).pdf" $"output/recombined/score_report_($ids | get $i).pdf"}
+export def main [
+  config_file: string,
+  input_pdf: string
+] {
+  let ids = (open $config_file | get config.targets.ids)
+  qpdf --split-pages=5 $input_pdf -- output/%d.pdf
+  let padding = ($ids | length | into string | str length)
+  $ids | enumerate | par-each {|item|
+    let start = ($item.index * 5 + 1 | into string | fill -a right -c '0' -w $padding)
+    let end = ($item.index * 5 + 5 | into string | fill -a right -c '0' -w $padding)
+    mv $"output/($start)-($end).pdf" $"output/score_report_($item.item).pdf"
+  }
+}

@@ -6,21 +6,23 @@
 }
 
 #let config = toml("config.toml").config
-#let csvs_path = config.csvs_path
+#let csvs_path = config.csv_paths.joined
 #let create_dict = (k, v) => {
   let dict = (:)
   dict.insert(k, v)
   dict
 }
-#let answers = csv(csvs_path + "/answers.csv")
+#let answers = csv(config.csv_paths.answers)
 #let answers_map = (:)
 #for row in answers.slice(1) {
   let answers = answers_map.at(lower(row.at(1)), default: ())
   answers.push(row.at(3))
   answers_map.insert(lower(row.at(1)), answers)
 }
-#let csvs = ("overall", "algebra", "calculus", "discrete", "general", "geometry", "guts", "power", "team").map(key => {
-  create_dict(key, csv(csvs_path + "/" + key + ".csv"))
+#let csvs = (("algebra", "calculus", "discrete", "general", "geometry", "guts", "team").map(key => {
+  (key, csvs_path + "/" + key + ".csv")
+}) + (("overall", config.csv_paths.overall),("power", config.csv_paths.power))).map(((key, path)) => {
+  create_dict(key, csv(path))
 }).sum()
 #let id_map = (:)
 #for (test, id_data) in csvs.pairs().map(((test, csv_data)) => {
@@ -38,6 +40,23 @@
     id_map.insert(id, entry)
   }
 }
+
+// // PATCH FOR POTD MISSING PPL
+// #for i in range(349, 375+1) {
+//   id_map.insert(str(i), ("overall": ("Name": "POTD Team " + str(i))))
+// }
+
+// #{
+//   let team_registration = csv(config.csv_paths.team_registration)
+//   let keys = team_registration.at(0)
+//   let number_index = keys.position(k => k == "number")
+//   let name_index = keys.position(k => k == "name")
+//   for row in team_registration.slice(1) {
+//     if id_map.at(row.at(number_index), default: none) == none {
+//       id_map.insert(row.at(number_index), ("team": ("Name": row.at(name_index))))
+//     }
+//   }
+// }
 
 #set page(height: 11in, width: 8.5in)
 #let dark_red = rgb(119, 24, 14).lighten(10%)
@@ -70,9 +89,16 @@
   figure(table(columns: (1fr, 1fr, 1fr), inset: 10pt,
     "", [*Score*], [*Rank*], 
     "SMT Index", [#calc.round(float(data.overall.Score), digits: 2)], data.overall.Rank,
-    "Power", data.power.Score, data.power.Rank,
-    "Guts", data.guts.Score, data.guts.Rank,
-    "Team", data.team.Score, data.team.Rank,
+    ..if data.at("power", default: none) != none {
+      ("Power", data.power.Score, data.power.Rank,)
+    },
+    ..if data.at("guts", default: none) != none {
+      ("Guts", data.guts.Score, data.guts.Rank,)
+    },
+    // "Guts", data.guts.Score, data.guts.Rank,
+    ..if data.at("team", default: none) != none {
+      ("Team", data.team.Score, data.team.Rank,)
+    }
   ))
 }
 
@@ -132,6 +158,15 @@
 }
 
 #let get_team_breakdown = (team_id) => {
+  // If this student's team did not take the team test, skip.
+  if id_map.at(team_id).at("team", default: none) == none {
+    align(center, [
+      #set text(size: 15pt, fill: dark_red)
+      *Team Breakdown (N/A)*
+    ])
+    return
+  }
+
   align(center, [
     #set text(size: 15pt, fill: dark_red)
     *Team Breakdown*
@@ -139,7 +174,7 @@
 
   figure(table(columns: (1fr, 1fr, 1fr), inset: 10pt,
     [*Problem Number*], [*Correct Answer*], [*Correct?*],
-    ..id_map.at(team_id).team.Grades.split(",").zip(answers_map.at("team")).enumerate().map(((i, (correct, answer))) => {
+    ..id_map.at(team_id).team.grades.split(",").zip(answers_map.at("team")).enumerate().map(((i, (correct, answer))) => {
       (str(i + 1), mi(answer), capitalize(str(correct)))
     }).flatten()
   ))
@@ -155,12 +190,21 @@
 }
 
 #let get_guts_breakdown = (team_id) => {
+  // If this student's team did not take the guts test, skip.
+  if id_map.at(team_id).at("guts", default: none) == none {
+    align(center, [
+      #set text(size: 15pt, fill: dark_red)
+      *Guts Breakdown (N/A)*
+    ])
+    return
+  }
+
   align(center, [
     #set text(size: 15pt, fill: dark_red)
     *Guts Breakdown*
   ])
   
-  let (t1, t2) = split_at(id_map.at(team_id).guts.pairs().filter(((k, _)) => {k.starts-with("Problem")}).map(((_, v)) => v).zip(answers_map.at("guts")).enumerate().map(((i, (score, answer))) => {
+  let (t1, t2) = split_at(id_map.at(team_id).guts.grades.split(",").zip(answers_map.at("guts")).enumerate().map(((i, (score, answer))) => {
     (str(i + 1), mi(answer), score)
   }), calc.ceil(answers_map.at("guts").len() / 2))
   table(columns: (1fr, 1fr, 1fr) * 2, inset: 10pt,
@@ -172,17 +216,25 @@
 
 #let get_individual_breakdown = (id) => {
   let (title, test_names, t1, t2) = if id_map.at(id).at("general", default: none) != none {
-    let (t1, t2) = split_at(id_map.at(id).general.Grades.split(",").zip(answers_map.at("general")).enumerate().map(((i, (correct, answer))) => {
+    let (t1, t2) = split_at(id_map.at(id).general.grades.split(",").zip(answers_map.at("general")).enumerate().map(((i, (correct, answer))) => {
       (str(i + 1), mi(answer), capitalize(str(correct)))
     }), calc.ceil(answers_map.at("general").len() / 2))
     ("Individual Test Breakdown", ("General Test", ), t1, t2)
   } else {
     let tests = id_map.at(id).keys()
-    ("Individual Tests Breakdown", tests.map(t => capitalize(t) + " Test"), ..id_map.at(id).keys().map((test) => {
-      id_map.at(id).at(test).Grades.split(",").zip(answers_map.at(test)).enumerate().map(((i, (correct, answer))) => {
+
+    let results = id_map.at(id).keys().map((test) => {
+      id_map.at(id).at(test).grades.split(",").zip(answers_map.at(test)).enumerate().map(((i, (correct, answer))) => {
         (str(i + 1), mi(answer), capitalize(str(correct)))
       })
-    }))
+    })
+    let (t1, t2) = if results.len() == 1 {
+      // Contestant somehow only took one individual test.
+      split_at(results.at(0), calc.ceil(results.at(0).len() / 2))
+    } else {
+      results
+    }
+    ("Individual Tests Breakdown", tests.map(t => capitalize(t) + " Test"), t1, t2)
   }
   align(center, [
     #set text(size: 15pt, fill: dark_red)
@@ -203,7 +255,7 @@
 
 #let layout_student = (id) => {
   let team_id = id.slice(0, 3)
-  let team_name = id_map.at(team_id).team.Name
+  let team_name = id_map.at(team_id).overall.Name
   let name = id_map.at(id).values().first().Name
 
   figure(image(config.logo_path, width: 50%))
@@ -234,10 +286,8 @@
 }
 
 // #for id in config.targets.slice(0, 10) {
-#for id in config.targets {
+#for id in config.targets.ids {
   layout_student(id)
 }
-
-
 
 #check_csvs(csvs)
