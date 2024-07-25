@@ -1,13 +1,15 @@
 [config]
 logo_path = "./logo.png"
 
-[config.csv_paths]
+[config.data_paths]
 # Path to folder containing well-formed csv files.
 joined = "./data/joined"
-power = "./data/scores_and_ranks/power.csv"
-overall = "./data/scores_and_ranks/overall.csv"
-answers = "./data/answers.csv"
-team_registration = "./data/team_registration.csv"
+power = "./raw_data/scores_and_ranks/power.csv"
+overall = "./raw_data/scores_and_ranks/overall.csv"
+answers = "./raw_data/answers.csv"
+team_registration = "./raw_data/team_registration.csv"
+# Path to folder with the calculated stats json files.
+stats = "./data/stats"
 
 [config.targets]
 # Individuals for which we generate a report.

@@ -1,30 +1,41 @@
 # Usage
 
-Put grades data in `data` folder.
+Put downloaded grades from contest dojo, answer csv from supabase, team registration csv,
+and scores and ranks csv into `raw_data` folder.
+
 Expected structure: 
 ```
+- raw_data
+  - scores_and_ranks
+    - algebra.csv
+      - Rank,ID,Score,Name,...
+    - discrete.csv
+      - similar ...
+    - ...
+  - contest_dojo
+    - team.csv
+      - ID,#,Team Name,Score,C1,C2, ...
+    - algebra.csv
+      - " Student ID",#," Student Name",C1,C2, ...
+    - ...
+  - team_registration.csv
+    - id,number,name,org_id, ...
+  - answers.csv
+    - id,test_name,problem_number,answer_latex
 - data
-  - algebra.csv
-    - Rank,ID,Score,Name,HM,grades (looks like "true, false, true, ...")
-  - answers.csv (generate with scripts/query_solutions.sql)
-    - "id","test_name","problem_number","answer_latex"
-  - calculus.csv
-    - Rank,ID,Score,Name,HM,grades
-  - discrete.csv
-    - Rank,ID,Score,Name,HM,grades
-  - general.csv
-    - Rank,ID,Score,Name,HM,grades
-  - geometry.csv
-    - Rank,ID,Score,Name,HM,grades
-  - guts.csv
-    - Rank,ID,Score,Name,Organization,HM,grades (looks like "10,0,0,11,0,11,...")
-  - overall.csv
-    - Rank,ID,Score,Name,Organization,HM
-  - power.csv
-    - Rank,ID,Score,Name,Organization,HM
-  - team.csv
-    - Rank,ID,Score,Name,Organization,HM,grades
+  - joined (directory)
+  - stats (directory)
+  - contest_dojo_grades (directory)
 ```
+
+If you have nushell and xsv installed, run the scripts with the below.
+```
+scripts/cd_to_grades.nu raw_data/contest_dojo/ data/contest_dojo_grades/
+scripts/stats.nu raw_data/scores_and_ranks/ data/stats
+scripts/join.nu data/contest_dojo_grades/ raw_data/scores_and_ranks/ data/joined/
+```
+
+Select which students for which to generate a report in config.toml.
 
 Then, run `typst compile report.typ`.
 To split the pdf into individual reports, run the contents of `scripts/split_pdf.nu` 
