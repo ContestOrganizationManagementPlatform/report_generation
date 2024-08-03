@@ -2,7 +2,6 @@
 
 # Usage: ./scripts/join.nu data/contest_dojo_grades raw_data/scores_and_ranks data/joined -f
 # where contest_dojo_grades is populated by cd_to_grades.
-
 export def main [
   grades_directory: string,
   scores_and_ranks_directory: string,

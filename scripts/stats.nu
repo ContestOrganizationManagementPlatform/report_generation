@@ -2,7 +2,6 @@
 
 # Usage: ./scripts/stats.nu raw_data/scores_and_ranks data/stats -f
 # Calculates statistics on each test and outputs to the specificed directory as json.
-
 export def main [
   scores_and_ranks_directory: string,
   output_directory: string,

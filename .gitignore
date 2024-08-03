@@ -1,5 +1,13 @@
 data
-raw_data/*
+raw_data
 logo.png
 report.pdf
 output
+certificate_generation/.venv
+certificate_generation/Oswald
+certificate_generation/certificate_base.svg
+certificate_generation/email_pdf_url.csv
+certificate_generation/joined.csv
+certificate_generation/joined_2.csv
+certificate_generation/subscribed_export.csv
+certificate_generation/token.pickle

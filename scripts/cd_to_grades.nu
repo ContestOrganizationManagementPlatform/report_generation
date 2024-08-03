@@ -1,12 +1,11 @@
 #!/usr/bin/env nu
 
-# Usage: ./scripts/cd_to_grades.nu raw_data/contest_dojo data/contest_dojo_grades/ -f
-# where raw_data contains the downloaded files from Contest Dojo (per tournament per test).
-
 # The value of each question goes up depending on which set (of 3) it is in.
 let points = [10, 11, 12, 13, 14, 16, 18, 21, 25]
 let guts_scores = 1..=27 | each {|problem_number| $points | get ((($problem_number - 1) / 3) | math floor)}
 
+# Usage: ./scripts/cd_to_grades.nu raw_data/contest_dojo data/contest_dojo_grades/ -f
+# where raw_data contains the downloaded files from Contest Dojo (per tournament per test).
 export def main [
   input_directory: string,
   output_directory: string,
